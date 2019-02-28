@@ -105,27 +105,14 @@ public class Planet : MonoBehaviour
             beaconEnd.transform.position = p2;
 
         Triangle closest = null;
-        float minDistance = float.PositiveInfinity;
+        
 
         foreach (Triangle tri in tris)
         {
-            float dist = Vector3.Distance(tri.v1, p2);
-            if (dist < minDistance)                
+            if (p2.x > tri.minPoint.x && p2.y > tri.minPoint.y && p2.z > tri.minPoint.z &&
+                p2.x < tri.maxPoint.x && p2.y < tri.maxPoint.y && p2.z < tri.maxPoint.z)
             {
                 closest = tri;
-                minDistance = dist;
-            }
-            dist = Vector3.Distance(tri.v2, p2);
-            if (dist < minDistance)
-            {
-                closest = tri;
-                minDistance = dist;
-            }
-            dist = Vector3.Distance(tri.v3, p2);
-            if (dist < minDistance)
-            {
-                closest = tri;
-                minDistance = dist;
             }
         }
         if (closest != null)
