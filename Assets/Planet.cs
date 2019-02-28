@@ -23,11 +23,15 @@ public class Triangle
         maxPoint.x = Mathf.Max(v1.x, Mathf.Max(v2.x, v3.x));
         maxPoint.y = Mathf.Max(v1.y, Mathf.Max(v2.y, v3.y));
         maxPoint.z = Mathf.Max(v1.z, Mathf.Max(v2.z, v3.z));
+
+        centroid.x = (v1.x + v2.x + v3.x) / 3;
+        centroid.y = (v1.y + v2.y + v3.y) / 3;
+        centroid.z = (v1.z + v2.z + v3.z) / 3;
     }
 
-    public Vector3 position, v1, v2, v3, minPoint, maxPoint;
+    public Vector3 position, v1, v2, v3, minPoint, maxPoint, centroid;
     public int id;
-    public int i1, i2, i3;
+    public int i1, i2, i3;    
     public List<Triangle> adjacents;
 };
 
@@ -112,14 +116,30 @@ public class Planet : MonoBehaviour
             if (p2.x > tri.minPoint.x && p2.y > tri.minPoint.y && p2.z > tri.minPoint.z &&
                 p2.x < tri.maxPoint.x && p2.y < tri.maxPoint.y && p2.z < tri.maxPoint.z)
             {
-                closest = tri;
-            }
+                if (closest == null)
+                {
+                    closest = tri;
+                }
+                else
+                {
+                    if (Vector3.Distance(tri.centroid, p2) < Vector3.Distance(closest.centroid, p2))
+                    {
+                        closest = tri;
+                    }
+                }
+            }            
         }
+
         if (closest != null)
         {
-            Gizmos.DrawWireSphere(closest.v1, 10);
-            Gizmos.DrawWireSphere(closest.v2, 10);
-            Gizmos.DrawWireSphere(closest.v3, 10);
+            Gizmos.DrawWireSphere(closest.v1, 1);
+            Gizmos.DrawWireSphere(closest.v2, 1);
+            Gizmos.DrawWireSphere(closest.v3, 1);
+            Gizmos.DrawWireSphere(closest.centroid, 1);
+        }
+        else
+        {
+            Debug.Log("Closest triangle not found");
         }
     }
 
