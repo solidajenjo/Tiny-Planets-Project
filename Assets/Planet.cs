@@ -14,7 +14,6 @@ public class Triangle
         this.v1 = v1;
         this.v2 = v2;
         this.v3 = v3;
-        adjacents = new List<Triangle>();
 
         minPoint.x = Mathf.Min(v1.x, Mathf.Min(v2.x, v3.x));
         minPoint.y = Mathf.Min(v1.y, Mathf.Min(v2.y, v3.y));
@@ -32,8 +31,13 @@ public class Triangle
     public Vector3 position, v1, v2, v3, minPoint, maxPoint, centroid;
     public int id;
     public int i1, i2, i3;    
-    public List<Triangle> adjacents;
 };
+
+public class NavMeshNode
+{
+    public List<NavMeshNode> adjacents;
+}
+
 
 [ExecuteInEditMode]
 public class Planet : MonoBehaviour
@@ -52,6 +56,7 @@ public class Planet : MonoBehaviour
     public OctreeComponent octree;
 
     Triangle[] triangles;
+    NavMeshNode[] navMesh;
 
     void Start()
     {
@@ -65,7 +70,15 @@ public class Planet : MonoBehaviour
         octree = new OctreeComponent(transform.position, size, maxDepth, bucketSize);
         Mesh mesh = GetComponent<MeshFilter>().mesh;
         int nTris = mesh.triangles.Length / 3;
+
         triangles = new Triangle[nTris];
+        navMesh = new NavMeshNode[mesh.vertexCount];
+
+
+        for (int i = 0; i < mesh.vertexCount; ++i)
+        {
+            navMesh[i] = new NavMeshNode();
+        }
 
         for (int i = 0; i < nTris; ++i) //create triangles
         {
@@ -75,25 +88,20 @@ public class Planet : MonoBehaviour
                                         mesh.triangles[(i * 3) + 2],
                                         transform.TransformPoint(mesh.vertices[mesh.triangles[i * 3]]),
                                         transform.TransformPoint(mesh.vertices[mesh.triangles[(i * 3) + 1]]),
-                                        transform.TransformPoint(mesh.vertices[mesh.triangles[(i * 3) + 2]]));            
+                                        transform.TransformPoint(mesh.vertices[mesh.triangles[(i * 3) + 2]]));
+
+            navMesh[triangles[i].i1].adjacents.Add(navMesh[triangles[i].i2]);
+            navMesh[triangles[i].i1].adjacents.Add(navMesh[triangles[i].i3]);
+
+            navMesh[triangles[i].i2].adjacents.Add(navMesh[triangles[i].i1]);
+            navMesh[triangles[i].i2].adjacents.Add(navMesh[triangles[i].i3]);
+
+            navMesh[triangles[i].i3].adjacents.Add(navMesh[triangles[i].i2]);
+            navMesh[triangles[i].i3].adjacents.Add(navMesh[triangles[i].i1]);
         }
-
        
-
         octree.InsertElements(triangles);
-        /*for (int i = 0; i < nTris; ++i) //Link triangles step
-        {            
-            for (int j = i + 1; j < nTris; ++j)
-            {
-                if (triangles[i].i1 == triangles[j].i1 || triangles[i].i1 == triangles[j].i2 || triangles[i].i1 == triangles[j].i3 ||
-                    triangles[i].i2 == triangles[j].i1 || triangles[i].i2 == triangles[j].i2 || triangles[i].i2 == triangles[j].i3 ||
-                    triangles[i].i3 == triangles[j].i1 || triangles[i].i3 == triangles[j].i2 || triangles[i].i3 == triangles[j].i3) //Adjacent triangles?
-                {
-                    triangles[i].adjacents.Add(triangles[j]); //Link triangles
-                    triangles[j].adjacents.Add(triangles[i]);  //Link triangles
-                }
-            }
-        }*/
+
     }
 
     private void OnDrawGizmos()
