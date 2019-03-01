@@ -35,7 +35,10 @@ public class Triangle
 
 public class NavMeshNode
 {
+    public int id;
+    public Vector3 position;
     public List<NavMeshNode> adjacents;
+    public NavMeshNode previous;
 }
 
 
@@ -50,13 +53,14 @@ public class Planet : MonoBehaviour
     public GameObject beaconEnd;
     public bool setStart = true;
 
-
+    public Triangle begin, end;
+    public NavMeshNode pathEnd;
 
     [SerializeField]
     public OctreeComponent octree;
 
     Triangle[] triangles;
-    NavMeshNode[] navMesh;
+    NavMeshNode[] navMesh;    
 
     void Start()
     {
@@ -69,15 +73,20 @@ public class Planet : MonoBehaviour
         Debug.Log("Reset");
         octree = new OctreeComponent(transform.position, size, maxDepth, bucketSize);
         Mesh mesh = GetComponent<MeshFilter>().mesh;
+
+        int nVertices = mesh.vertexCount;
+
         int nTris = mesh.triangles.Length / 3;
-
         triangles = new Triangle[nTris];
-        navMesh = new NavMeshNode[mesh.vertexCount];
 
+        navMesh = new NavMeshNode[nVertices];
 
-        for (int i = 0; i < mesh.vertexCount; ++i)
+        for (int i = 0; i < nVertices; ++i)
         {
             navMesh[i] = new NavMeshNode();
+            navMesh[i].adjacents = new List<NavMeshNode>();
+            navMesh[i].id = i;
+            navMesh[i].position = transform.TransformPoint(mesh.vertices[i]);
         }
 
         for (int i = 0; i < nTris; ++i) //create triangles
@@ -99,9 +108,54 @@ public class Planet : MonoBehaviour
             navMesh[triangles[i].i3].adjacents.Add(navMesh[triangles[i].i2]);
             navMesh[triangles[i].i3].adjacents.Add(navMesh[triangles[i].i1]);
         }
-       
+
+        for (int i = 0; i < mesh.vertexCount; ++i)
+        {
+            for (int j = i; j < mesh.vertexCount; ++j)
+            {
+                if (mesh.vertices[i] == mesh.vertices[j])
+                {
+                    navMesh[i].adjacents.Add(navMesh[j]);
+                    navMesh[j].adjacents.Add(navMesh[i]);
+                }
+            }
+        }
+
         octree.InsertElements(triangles);
 
+    }
+
+    public NavMeshNode[] GetPath(Triangle begin, Triangle end)
+    {
+        pathEnd = null;
+        bool[] nodesOpened = new bool[navMesh.Length];
+        Queue<NavMeshNode> Q = new Queue<NavMeshNode>();
+        Q.Enqueue(navMesh[begin.i1]);
+
+        while (Q.Count > 0)
+        {
+            NavMeshNode node = Q.Dequeue();
+            Debug.Log("Node id " + node.id + " end i1 " + end.i1 + " end i2 " + end.i2 + " end i3 " + end.i3);
+            if (node.id == end.i1 || node.id == end.i2 || node.id == end.i3) // We're on the destination triangle
+            {
+                Debug.Log("Path found");
+                pathEnd = node;
+            }
+            else
+            {
+                foreach (NavMeshNode nextNode in node.adjacents)
+                {
+                    if (!nodesOpened[nextNode.id])
+                    {
+                        Q.Enqueue(nextNode);
+                        nodesOpened[nextNode.id] = true;
+                        nextNode.previous = node;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     private void OnDrawGizmos()
@@ -110,19 +164,16 @@ public class Planet : MonoBehaviour
             this.octree.DrawGizmos();
         
         List<Triangle> tris = octree.getIntesections(p2);
-
-        if (setStart)
-            beaconStart.transform.position = p2;
-        else
-            beaconEnd.transform.position = p2;
-
+      
         Triangle closest = null;
-        
+
+        Vector3 k1 = new Vector3(32.3f, 45.6f, -89.23f);
+        Vector3 k2 = new Vector3(32.3f, 45.6f, -89.23f);
 
         foreach (Triangle tri in tris)
         {
-            if (p2.x > tri.minPoint.x && p2.y > tri.minPoint.y && p2.z > tri.minPoint.z &&
-                p2.x < tri.maxPoint.x && p2.y < tri.maxPoint.y && p2.z < tri.maxPoint.z)
+            if (p2.x >= tri.minPoint.x && p2.y >= tri.minPoint.y && p2.z >= tri.minPoint.z &&
+                p2.x <= tri.maxPoint.x && p2.y <= tri.maxPoint.y && p2.z <= tri.maxPoint.z)
             {
                 if (closest == null)
                 {
@@ -138,6 +189,42 @@ public class Planet : MonoBehaviour
             }            
         }
 
+        if (setStart)
+        {
+            beaconStart.transform.position = p2;
+            begin = closest;
+        }
+        else
+        {
+            beaconEnd.transform.position = p2;
+            end = closest;
+        }
+
+        if (begin != null)
+        {
+            Gizmos.DrawLine(begin.v1, begin.v2);
+            Gizmos.DrawLine(begin.v2, begin.v3);
+            Gizmos.DrawLine(begin.v1, begin.v3);
+        }
+
+        if (end != null)
+        {
+            Gizmos.DrawLine(end.v1, end.v2);
+            Gizmos.DrawLine(end.v2, end.v3);
+            Gizmos.DrawLine(end.v1, end.v3);
+        }
+
+        if (pathEnd != null)
+        {
+            Debug.Log("Draw path");
+            NavMeshNode node = pathEnd;
+            while (node.id != begin.i1 && node.id != begin.i2 && node.id != begin.i3)
+            {
+                node = node.previous;
+                Gizmos.DrawLine(node.position, node.previous.position);
+            }
+        }
+        
         if (closest != null)
         {
             Gizmos.DrawWireSphere(closest.v1, 1);

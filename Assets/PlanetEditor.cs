@@ -19,6 +19,10 @@ public class PlanetEditor : Editor
             planet.Reset();
         }        
 
+        if (GUILayout.Button("Get path"))
+        {
+            planet.GetPath(planet.begin, planet.end);
+        }
     }
 
     
@@ -27,8 +31,10 @@ public class PlanetEditor : Editor
     {        
         if (Event.current.type == EventType.MouseDown)
         {
+            Debug.Log("HELLO");
             Planet planet = (Planet)target;
-           
+            planet.pathEnd = null;
+
             Ray ray = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
 
             RaycastHit hit;
