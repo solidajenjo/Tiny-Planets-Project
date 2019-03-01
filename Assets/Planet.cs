@@ -39,6 +39,7 @@ public class NavMeshNode
     public Vector3 position;
     public List<NavMeshNode> adjacents;
     public NavMeshNode previous;
+    public Triangle triangle;
 }
 
 
@@ -101,12 +102,15 @@ public class Planet : MonoBehaviour
 
             navMesh[triangles[i].i1].adjacents.Add(navMesh[triangles[i].i2]);
             navMesh[triangles[i].i1].adjacents.Add(navMesh[triangles[i].i3]);
+            navMesh[triangles[i].i1].triangle = triangles[i];
 
             navMesh[triangles[i].i2].adjacents.Add(navMesh[triangles[i].i1]);
             navMesh[triangles[i].i2].adjacents.Add(navMesh[triangles[i].i3]);
+            navMesh[triangles[i].i2].triangle = triangles[i];
 
             navMesh[triangles[i].i3].adjacents.Add(navMesh[triangles[i].i2]);
             navMesh[triangles[i].i3].adjacents.Add(navMesh[triangles[i].i1]);
+            navMesh[triangles[i].i3].triangle = triangles[i];
         }
 
         for (int i = 0; i < mesh.vertexCount; ++i)
@@ -132,7 +136,7 @@ public class Planet : MonoBehaviour
         Queue<NavMeshNode> Q = new Queue<NavMeshNode>();
         Q.Enqueue(navMesh[begin.i1]);
 
-        while (Q.Count > 0)
+        while (Q.Count > 0 && pathEnd == null)
         {
             NavMeshNode node = Q.Dequeue();
             Debug.Log("Node id " + node.id + " end i1 " + end.i1 + " end i2 " + end.i2 + " end i3 " + end.i3);
@@ -215,14 +219,33 @@ public class Planet : MonoBehaviour
         }
 
         if (pathEnd != null)
-        {
+        {            
             Debug.Log("Draw path");
             NavMeshNode node = pathEnd;
+            Stack<NavMeshNode> S = new Stack<NavMeshNode>();
+            NavMeshNode arrivalNode = new NavMeshNode();
+            arrivalNode.position = beaconEnd.transform.position;
+            S.Push(arrivalNode);
+            while (node.id != begin.i1 && node.id != begin.i2 && node.id != begin.i3)
+            {
+                S.Push(node);
+                node = node.previous;
+                Gizmos.DrawLine(node.triangle.v1, node.triangle.v2);
+                Gizmos.DrawLine(node.triangle.v1, node.triangle.v3);
+                Gizmos.DrawLine(node.triangle.v3, node.triangle.v2);
+            }
+
+            beaconStart.GetComponent<NavigationAgent>().path = S.ToArray();
+            node = pathEnd;
             while (node.id != begin.i1 && node.id != begin.i2 && node.id != begin.i3)
             {
                 node = node.previous;
+                Gizmos.color = Color.green;
                 Gizmos.DrawLine(node.position, node.previous.position);
+                Gizmos.color = Color.yellow;
+                Gizmos.DrawLine(node.triangle.centroid, node.previous.triangle.centroid);
             }
+            Gizmos.color = Color.white;
         }
         
         if (closest != null)
