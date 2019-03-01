@@ -43,7 +43,7 @@ public class NavMeshNode
 }
 
 
-[ExecuteInEditMode]
+//[ExecuteInEditMode]
 public class Planet : MonoBehaviour
 {
     public float size;
@@ -139,7 +139,7 @@ public class Planet : MonoBehaviour
         while (Q.Count > 0 && pathEnd == null)
         {
             NavMeshNode node = Q.Dequeue();
-            Debug.Log("Node id " + node.id + " end i1 " + end.i1 + " end i2 " + end.i2 + " end i3 " + end.i3);
+            //Debug.Log("Node id " + node.id + " end i1 " + end.i1 + " end i2 " + end.i2 + " end i3 " + end.i3);
             if (node.id == end.i1 || node.id == end.i2 || node.id == end.i3) // We're on the destination triangle
             {
                 Debug.Log("Path found");
@@ -220,7 +220,6 @@ public class Planet : MonoBehaviour
 
         if (pathEnd != null)
         {            
-            Debug.Log("Draw path");
             NavMeshNode node = pathEnd;
             Stack<NavMeshNode> S = new Stack<NavMeshNode>();
             NavMeshNode arrivalNode = new NavMeshNode();
@@ -230,9 +229,9 @@ public class Planet : MonoBehaviour
             {
                 S.Push(node);
                 node = node.previous;
-                Gizmos.DrawLine(node.triangle.v1, node.triangle.v2);
-                Gizmos.DrawLine(node.triangle.v1, node.triangle.v3);
-                Gizmos.DrawLine(node.triangle.v3, node.triangle.v2);
+                //Gizmos.DrawLine(node.triangle.v1, node.triangle.v2);
+                //Gizmos.DrawLine(node.triangle.v1, node.triangle.v3);
+                //Gizmos.DrawLine(node.triangle.v3, node.triangle.v2);
             }
 
             beaconStart.GetComponent<NavigationAgent>().path = S.ToArray();
@@ -243,7 +242,7 @@ public class Planet : MonoBehaviour
                 Gizmos.color = Color.green;
                 Gizmos.DrawLine(node.position, node.previous.position);
                 Gizmos.color = Color.yellow;
-                Gizmos.DrawLine(node.triangle.centroid, node.previous.triangle.centroid);
+                //Gizmos.DrawLine(node.triangle.centroid, node.previous.triangle.centroid);
             }
             Gizmos.color = Color.white;
         }

@@ -24,7 +24,8 @@ public class NavigationAgent : MonoBehaviour
     {
         if (moving && path != null)
         {
-            transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.FromToRotation(transform.forward, -(transform.position - path[target].position)) * transform.rotation, turningSpeed);
+            //transform.rotation = Quaternion.Lerp(transform.rotation, Quaternion.FromToRotation(transform.forward, -(transform.position - path[target].position)) * transform.rotation, turningSpeed);
+            transform.LookAt(path[target].position);
             rb.velocity = transform.forward * speed;
             if (Vector3.Distance(transform.position, path[target].position) < arrivedDistance)
             {
